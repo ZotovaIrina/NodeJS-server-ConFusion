@@ -1,38 +1,40 @@
-var MongoClient = require('mongodb').MongoClient,
+var mongoose = require('mongoose'),
     assert = require('assert');
 
-var dboper = require('./operations');
+var Dishes = require('./models/dishes');
 
 // Connection URL
 var url = 'mongodb://localhost:27017/conFusion';
-
-// Use connect method to connect to the Server
-MongoClient.connect(url, function (err, db) {
-    assert.equal(null, err);
+mongoose.connect(url);
+var db = mongoose.connection;
+//if error, then
+db.on('error', console.error.bind(console, 'connection error:'));
+//if success
+db.once('open', function () {
+    // we're connected!
     console.log("Connected correctly to server");
 
-    dboper.insertDocument(db, { name: "Vadonut", description: "Test" },
-        "dishes", function (result) {
-            console.log(result.ops);
+    // create a new user
+    var newDish = Dishes({
+        name: 'Uthapizza',
+        description: 'Test'
+    });
 
-            dboper.findDocuments(db, "dishes", function (docs) {
-                console.log(docs);
+    // save the user
+    newDish.save(function (err) {
+        if (err) throw err;
+        console.log('Dish created!');
 
-                dboper.updateDocument(db, { name: "Vadonut" },
-                    { description: "Updated Test" },
-                    "dishes", function (result) {
-                        console.log(result.result);
 
-                        dboper.findDocuments(db, "dishes", function (docs) {
-                            console.log(docs);
+        // get all the users
+        Dishes.find({}, function (err, dishes) {
+            if (err) throw err;
 
-                            db.dropCollection("dishes", function (result) {
-                                console.log(result);
-
-                                db.close();
-                            });
-                        });
-                    });
+            // object of all the users
+            console.log(dishes);
+            db.collection('dishes').drop(function () {
+                db.close();
             });
         });
+    });
 });
