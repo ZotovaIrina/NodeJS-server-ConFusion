@@ -2,39 +2,44 @@ var mongoose = require('mongoose'),
     assert = require('assert');
 
 var Dishes = require('./models/dishes');
-
 // Connection URL
 var url = 'mongodb://localhost:27017/conFusion';
 mongoose.connect(url);
 var db = mongoose.connection;
-//if error, then
 db.on('error', console.error.bind(console, 'connection error:'));
-//if success
 db.once('open', function () {
     // we're connected!
     console.log("Connected correctly to server");
-
-    // create a new user
-    var newDish = Dishes({
+    // create a new dish
+    Dishes.create({
         name: 'Uthapizza',
         description: 'Test'
-    });
-
-    // save the user
-    newDish.save(function (err) {
+    }, function (err, dish) {
         if (err) throw err;
         console.log('Dish created!');
+        console.log(dish);
 
+        var id = dish._id;
 
-        // get all the users
-        Dishes.find({}, function (err, dishes) {
-            if (err) throw err;
+        // get all the dishes
+        setTimeout(function () {
+            Dishes.findByIdAndUpdate(id, {
+                $set: {
+                    description: 'Updated Test'
+                }
+            }, {
+                new: true
+            })
+                .exec(function (err, dish) {
+                    //get result of findByIdAndUpdate function and callback this function
+                    if (err) throw err;
+                    console.log('Updated Dish!');
+                    console.log(dish);
 
-            // object of all the users
-            console.log(dishes);
-            db.collection('dishes').drop(function () {
-                db.close();
-            });
-        });
+                    db.collection('dishes').drop(function () {
+                        db.close();
+                    });
+                });
+        }, 5000);
     });
 });
