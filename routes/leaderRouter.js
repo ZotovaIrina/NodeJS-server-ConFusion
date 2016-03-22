@@ -1,46 +1,66 @@
 var express = require('express');
 var bodyParser = require('body-parser');
 
-var leadership = express.Router();
+var Leadership = require('../models/leadership.js');
+var leadershipRouter = express.Router();
+var Verify = require('./verify.js');
 
-leadership.use(bodyParser.json());
+leadershipRouter.use(bodyParser.json());
 
-leadership.route('/')
-    .all(function(req,res,next) {
-        res.writeHead(200, { 'Content-Type': 'text/plain' });
-        next();
+leadershipRouter.route('/')
+
+    .get(Verify.verifyOrdinaryUser, function (req, res, next) {
+        Leadership.find({}, function (err, leader) {
+            if (err) throw err;
+            res.json(leader);
+        });
     })
 
-    .get(function(req,res,next){
-        res.end('Will send all the leadership to you!');
+    .post(Verify.verifyAdmin, function (req, res, next) {
+        Leadership.create(req.body, function (err, leader) {
+            if (err) throw err;
+            console.log('Leadership created!');
+            var id = leader._id;
+
+            res.writeHead(200, {
+                'Content-Type': 'text/plain'
+            });
+            res.end('Added the leadership with id: ' + id);
+        });
     })
 
-    .post(function(req, res, next){
-        res.end('Will add the leadership: ' + req.body.name + ' with details: ' + req.body.description);
-    })
-
-    .delete(function(req, res, next){
-        res.end('Deleting all leadership');
+    .delete(Verify.verifyAdmin, function (req, res, next) {
+        Leadership.remove({}, function (err, resp) {
+            if (err) throw err;
+            res.json(resp);
+        });
     });
 
-leadership.route('/:leadId')
-    .all(function(req,res,next) {
-        res.writeHead(200, { 'Content-Type': 'text/plain' });
-        next();
+leadershipRouter.route('/:leadId')
+
+    .get(Verify.verifyOrdinaryUser, function (req, res, next) {
+        Leadership.findById(req.params.leadId, function (err, leader) {
+            if (err) throw err;
+            res.json(leader);
+        });
     })
 
-    .get(function(req,res,next){
-        res.end('Will send details of the leadership: ' + req.params.leadId +' to you!');
+    .put(Verify.verifyAdmin, function (req, res, next) {
+        Leadership.findByIdAndUpdate(req.params.leadId, {
+            $set: req.body
+        }, {
+            new: true
+        }, function (err, leader) {
+            if (err) throw err;
+            res.json(leader);
+        });
     })
 
-    .put(function(req, res, next){
-        res.write('Updating the leadership: ' + req.params.leadId + '\n');
-        res.end('Will update the leadership: ' + req.body.name +
-            ' with details: ' + req.body.description);
-    })
-
-    .delete(function(req, res, next){
-        res.end('Deleting leadership: ' + req.params.leadId);
+    .delete(Verify.verifyAdmin, function (req, res, next) {
+        Leadership.findByIdAndRemove(req.params.leadId, function (err, resp) {
+            if (err) throw err;
+            res.json(resp);
+        });
     });
 
-module.exports = leadership;
+module.exports = leadershipRouter;

@@ -5,11 +5,16 @@ var User = require('../models/user');
 var Verify    = require('./verify');
 
 /* GET users listing. */
-router.get('/', function(req, res, next) {
-  res.send('respond with a resource');
-});
+router
+    .get('/', Verify.verifyAdmin, function (req, res, next) {
+      User.find({}, function (err, user) {
+        if (err) throw err;
+        res.json(user);
+      });
+    });
 
-router.post('/register', function(req, res) {
+router
+    .post('/register', function(req, res) {
   User.register(new User({ username : req.body.username }),
       req.body.password, function(err, user) {
         if (err) {
@@ -21,7 +26,8 @@ router.post('/register', function(req, res) {
       });
 });
 
-router.post('/login', function(req, res, next) {
+router
+    .post('/login', function(req, res, next) {
   passport.authenticate('local', function(err, user, info) {
     if (err) {
       return next(err);
@@ -48,7 +54,8 @@ router.post('/login', function(req, res, next) {
   })(req,res,next);
 });
 
-router.get('/logout', function(req, res) {
+router
+    .get('/logout', function(req, res) {
   req.logout();
   res.status(200).json({
     status: 'Bye!'
